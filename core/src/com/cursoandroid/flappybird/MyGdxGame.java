@@ -4,6 +4,7 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -11,6 +12,8 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Circle;
 import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.utils.viewport.StretchViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
 
 import java.util.Random;
 
@@ -31,8 +34,8 @@ public class MyGdxGame extends ApplicationAdapter {
     //private ShapeRenderer shapeRenderer;
 
     //Atributos de configuração
-    private int screenWidth;
-    private int screenHeight;
+    private float screenWidth;
+    private float screenHeight;
     private int gameState = 0; // 0 -> game not started 1 -> game started 2 -> game over
     private int points = 0;
     private int scaleSpeed = 0;
@@ -45,6 +48,12 @@ public class MyGdxGame extends ApplicationAdapter {
     private float deltaTime;
     private float randomHeightBetweenPlumbs;
     private boolean scoredPoint;
+    private OrthographicCamera orthographicCamera;
+    private Viewport viewport;
+    private final float VIRTUAL_WIDTH = 768;
+    private final float VIRTUAL_HEIGHT = 1024;
+
+
 
 
     @Override
@@ -64,7 +73,7 @@ public class MyGdxGame extends ApplicationAdapter {
 
         //font color
         bitmapFont.setColor(Color.BLUE);
-        bitmapFont.getData().setScale(12);
+        bitmapFont.getData().setScale(8);
 
         bird = new Texture[3];
         bird[0] = new Texture("passaro1.png");
@@ -72,13 +81,20 @@ public class MyGdxGame extends ApplicationAdapter {
         bird[2] = new Texture("passaro3.png");
         gameOver = new Texture("game_over.png");
 
+        /*****************************
+         * Configurações da camera
+         */
+        orthographicCamera = new OrthographicCamera();
+        orthographicCamera.position.set(VIRTUAL_WIDTH / 2, VIRTUAL_HEIGHT / 2, 0);
+        viewport = new StretchViewport(VIRTUAL_WIDTH,VIRTUAL_HEIGHT, orthographicCamera);
+
 
         background = new Texture("fundo.png");
         lowPlumb = new Texture("cano_baixo.png");
         highPlumb = new Texture("cano_topo.png");
 
-        screenWidth = Gdx.graphics.getWidth();
-        screenHeight = Gdx.graphics.getHeight();
+        screenWidth = VIRTUAL_WIDTH;
+        screenHeight = VIRTUAL_HEIGHT;
 
         initialVerticalPosition = screenHeight / 2;
         plumbHorizontalMovePosition = screenWidth;
@@ -88,6 +104,11 @@ public class MyGdxGame extends ApplicationAdapter {
 
     @Override
     public void render() {
+
+        orthographicCamera.update();
+
+        //Limpar frames anteriores
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
         //Gdx.app.log("Render" , "Rendering game" );
 
         deltaTime = Gdx.graphics.getDeltaTime();
@@ -118,10 +139,11 @@ public class MyGdxGame extends ApplicationAdapter {
                 //verificar se o cano saiu da tela
                 if (plumbHorizontalMovePosition < -highPlumb.getWidth()) {
                     plumbHorizontalMovePosition = screenWidth;
-                    randomHeightBetweenPlumbs = random.nextInt(400) - 200;
+
                     scoredPoint = false;
 
                 }
+                randomHeightBetweenPlumbs = random.nextInt(200) - 200;
 
                 //verifica pontuacao
                 if (plumbHorizontalMovePosition < 120) {
@@ -145,6 +167,8 @@ public class MyGdxGame extends ApplicationAdapter {
 
         }
 
+        //configurar projeção da camera
+        batch.setProjectionMatrix(orthographicCamera.combined);
 
         //Iniciando a exibicao das imagens
         batch.begin();
@@ -205,4 +229,8 @@ public class MyGdxGame extends ApplicationAdapter {
 
     }
 
+    @Override
+    public void resize(int width, int height) {
+        viewport.update(width, height);
+    }
 }
